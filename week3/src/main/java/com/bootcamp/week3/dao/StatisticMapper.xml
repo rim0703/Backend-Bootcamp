@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    
+<mapper namespace="com.bootcamp.week3.dao.StatisticMapper">
+ 
+    <select id="selectYearLogin" parameterType="string" resultType="hashMap">
+        select count(*) as totCnt
+        from statistc.requestinfo ri
+        where left(ri.createDate, 2) = #{year};
+    </select>
+    
+    <!-- 월 별 접속자 수 API -->
+    <select id="selectMonthLogin" parameterType="string" resultType="hashMap">
+        SELECT COUNT(*) AS totCnt
+        FROM statistc.requestinfo m
+        WHERE MID(m.createDate, 1, 2) = #{year} AND MID(m.createDate, 3, 2) = #{month};
+    </select>
+    
+    
+    <!-- 일자 별 접속자 수 API -->
+    <select id="selectDayLogin" parameterType="string" resultType="hashMap">
+        SELECT COUNT(*) AS totCnt
+        FROM statistc.requestinfo d
+        WHERE LEFT(d.createDate, 6) = #{date};
+    </select>
+    
+    
+	<!-- 평균 하루 로그인 수 API -->
+    <select id="selectAvgDayLogin" parameterType="string" resultType="hashMap">
+        SELECT ROUND(AVG(loginCnt),0) as avgCnt
+       	FROM (
+        	SELECT COUNT(*) AS loginCnt
+        	FROM statistc.requestinfo d
+        	WHERE d.requestCode = 'L' AND 
+        		MID(d.createDate, 1, 2) = #{year} AND 
+        		MID(d.createDate, 3, 2) = #{month} ) AS tmp
+    </select>
+    
+    
+    <!-- 휴일 제외 로그인 수 API -->
+     <select id="selectNoHolidayLogin" parameterType="string" resultType="hashMap">
+        SELECT COUNT(*) AS noHolidayTotalCnt
+        FROM (
+        	SELECT createDate, dayofweek(SUBSTR(createDate, 1, 6)) AS weekday
+        	FROM statistc.requestinfo d
+        	WHERE requestCode = 'L' AND 
+        		MID(d.createDate, 1, 2) = #{year} AND 
+        		MID(d.createDate, 3, 2) = #{month}
+        ) AS tmp
+        where weekday != 1 AND weekday != 7;
+    </select>
+     
+     
+    <!-- 부서별 월별 로그인 수 API -->
+     <select id="selectDeptLogin" parameterType="string" resultType="hashMap">
+        SELECT *
+		FROM(
+			SELECT u.HR_ORGAN AS deptName, COUNT(*) AS totCnt
+			FROM requestinfo as r, user as u
+			WHERE r.userID = u.userID AND requestCode='L' 
+			AND MID(r.createDate, 1, 2) = #{year} AND 
+		        MID(r.createDate, 3, 2) = #{month}
+		    GROUP BY u.HR_ORGAN
+		) AS counts
+    </select>
+    
+</mapper>
